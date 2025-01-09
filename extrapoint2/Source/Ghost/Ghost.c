@@ -63,11 +63,11 @@ void ghost_update(void) {
 
     // Se il fantasma è in modalità CHASE
     if (blinky.mode == CHASE) {
-        Pair next_pos = ghost_pos;
+        Pair next_pos;
 
-        // Calcola il prossimo passo usando A*
-        aStarSearch(labyrinth, ghost_pos, pacman_pos);
-        next_pos = tracePath(labyrinth, pacman_pos); // Restituisce il prossimo passo
+				// Calcola il prossimo passo usando A*
+				aStarSearch(labyrinth, ghost_pos, pacman_pos);
+				next_pos = tracePath(cellDetails, pacman_pos);
 
         // Aggiorna la posizione del fantasma
         ghost_clear();
@@ -78,11 +78,11 @@ void ghost_update(void) {
     // Se il fantasma è in modalità FRIGHTENED
     else if (blinky.mode == FRIGHTENED) {
         Pair opposite_pos = {HEIGHT - pacman_y - 1, WIDTH - pacman_x - 1};
-        Pair next_pos = ghost_pos;
+        Pair next_pos;
 
         // Calcola il prossimo passo lontano da Pac-Man
         aStarSearch(labyrinth, ghost_pos, opposite_pos);
-        next_pos = tracePath(labyrinth, opposite_pos);
+        next_pos = tracePath(cellDetails, opposite_pos);
 
         ghost_clear();
         blinky.x = next_pos.x;

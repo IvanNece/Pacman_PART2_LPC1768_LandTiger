@@ -1,5 +1,13 @@
 #include "AStar.h"
 
+		/*
+		cellDetails è una matrice di tipo Cell, utilizzata dall'algoritmo A* per tracciare i dettagli delle celle 
+		(come i costi f, g, h e i genitori delle celle). Serve come "mappa" che registra le informazioni necessarie
+		per calcolare il percorso ottimale dalla posizione corrente alla destinazione.
+		*/
+// Dichiarazione globale di cellDetails
+Cell cellDetails[ROW][COL];
+
 // Funzione per verificare se una cella è valida
 bool isValid(int row, int col) {
     return (row >= 0) && (row < ROW) && (col >= 0) && (col < COL);
@@ -34,7 +42,8 @@ Pair tracePath(Cell cellDetails[ROW][COL], Pair dest) {
     }
 		
 		// Restituisci il primo passo verso la destinazione
-    return (Pair){row, col};
+    Pair next_step = {row, col};
+    return (Pair)next_step; // Cast esplicito per sicurezza
 }
 
 // Funzione principale per A*
@@ -55,7 +64,7 @@ void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
 
     bool closedList[ROW][COL] = { false };
 
-    Cell cellDetails[ROW][COL];
+    //Cell cellDetails[ROW][COL];
     for (i = 0; i < ROW; i++) {
         for (j = 0; j < COL; j++) {
             cellDetails[i][j].f = FLT_MAX;

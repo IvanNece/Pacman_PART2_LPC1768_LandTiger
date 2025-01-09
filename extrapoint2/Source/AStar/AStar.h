@@ -19,6 +19,9 @@ typedef struct {
     int x, y;
 } Pair;
 
+extern Cell cellDetails[ROW][COL];  // Dichiarazione globale
+
 void aStarSearch(int grid[ROW][COL], Pair src, Pair dest);
+Pair tracePath(Cell cellDetails[ROW][COL], Pair dest);
 
 #endif
