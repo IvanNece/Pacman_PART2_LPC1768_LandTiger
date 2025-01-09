@@ -49,6 +49,8 @@ void TIMER0_IRQHandler (void)
 		// Aggiorna la posizione di Pac-Man
 		pacman_update();
 		
+		ghost_update_speed();
+		
 		LPC_TIM0->IR = 1;			/* clear interrupt flag */
 	}
 		/* Match register 1 interrupt service routine */

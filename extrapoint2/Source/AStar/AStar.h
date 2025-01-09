@@ -6,6 +6,7 @@
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define ROW 31
 #define COL 28
@@ -19,7 +20,14 @@ typedef struct {
     int x, y;
 } Pair;
 
-extern Cell cellDetails[ROW][COL];  // Dichiarazione globale
+/*
+cellDetails è una matrice di tipo Cell, utilizzata dall'algoritmo A* per tracciare i dettagli delle celle
+(come i costi f, g, h e i genitori delle celle). Serve come "mappa" che registra le informazioni necessarie
+per calcolare il percorso ottimale dalla posizione corrente alla destinazione.
+*/
+
+// Dichiarazione globale di cellDetails
+static Cell cellDetails[ROW][COL];
 
 void aStarSearch(int grid[ROW][COL], Pair src, Pair dest);
 Pair tracePath(Cell cellDetails[ROW][COL], Pair dest);

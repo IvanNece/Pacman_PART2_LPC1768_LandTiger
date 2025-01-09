@@ -1,21 +1,13 @@
 #include "AStar.h"
 
-		/*
-		cellDetails è una matrice di tipo Cell, utilizzata dall'algoritmo A* per tracciare i dettagli delle celle 
-		(come i costi f, g, h e i genitori delle celle). Serve come "mappa" che registra le informazioni necessarie
-		per calcolare il percorso ottimale dalla posizione corrente alla destinazione.
-		*/
-// Dichiarazione globale di cellDetails
-Cell cellDetails[ROW][COL];
-
-// Funzione per verificare se una cella è valida
+// Funzione per verificare se una cella è valida (all'interno dei limiti della mappa)
 bool isValid(int row, int col) {
     return (row >= 0) && (row < ROW) && (col >= 0) && (col < COL);
 }
 
-// Funzione per verificare se una cella non è bloccata
+// Funzione per verificare se una cella è non bloccata
 bool isUnBlocked(int grid[ROW][COL], int row, int col) {
-    return (grid[row][col] == 1);
+    return (grid[row][col] != 1); // La cella è valida se NON è un muro
 }
 
 // Funzione per verificare se la cella è la destinazione
@@ -28,28 +20,31 @@ double calculateHValue(int row, int col, Pair dest) {
     return sqrt((row - dest.x) * (row - dest.x) + (col - dest.y) * (col - dest.y));
 }
 
-// Funzione per tracciare il percorso (puoi aggiornarla per segnare il percorso nel labirinto)
+// Funzione per tracciare il percorso
 Pair tracePath(Cell cellDetails[ROW][COL], Pair dest) {
     int row = dest.x;
     int col = dest.y;
 
     while (!(cellDetails[row][col].parent_i == row && cellDetails[row][col].parent_j == col)) {
-        // SI PUO AGGIORNARE IL LABIRITNO O LE VARIABILI DI STATO QUA
         int temp_row = cellDetails[row][col].parent_i;
         int temp_col = cellDetails[row][col].parent_j;
         row = temp_row;
         col = temp_col;
     }
-		
-		// Restituisci il primo passo verso la destinazione
+
     Pair next_step = {row, col};
-    return (Pair)next_step; // Cast esplicito per sicurezza
+    return next_step;
 }
 
-// Funzione principale per A*
+// Funzione principale per l'algoritmo A*
 void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
-    int i, j, k, dir;
-
+	
+		static uint8_t closedList[ROW * COL / 8] = {0}; // Compatto con bitfield
+    #define IS_CLOSED(i, j) ((closedList[(i) * COL + (j)] >> ((i * COL + j) % 8)) & 1)
+    #define SET_CLOSED(i, j) (closedList[(i) * COL + (j)] |= (1 << ((i * COL + j) % 8)))
+	
+		int i, j, k, dir;
+	
     if (!isValid(src.x, src.y) || !isValid(dest.x, dest.y)) {
         return;
     }
@@ -62,9 +57,11 @@ void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
         return;
     }
 
-    bool closedList[ROW][COL] = { false };
+    static Pair openList[100]; // Limita a 100 il numero massimo di nodi in openList
+    static int openListSize = 0;
 
-    //Cell cellDetails[ROW][COL];
+    static Cell cellDetails[ROW][COL]; // Mantieni cellDetails statico
+
     for (i = 0; i < ROW; i++) {
         for (j = 0; j < COL; j++) {
             cellDetails[i][j].f = FLT_MAX;
@@ -76,30 +73,27 @@ void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
     }
 
     i = src.x;
-    j = src.y;
+		j = src.y;
     cellDetails[i][j].f = 0.0;
     cellDetails[i][j].g = 0.0;
     cellDetails[i][j].h = 0.0;
     cellDetails[i][j].parent_i = i;
     cellDetails[i][j].parent_j = j;
 
-    Pair openList[ROW * COL];
-    int openListSize = 0;
-
     openList[openListSize++] = src;
 
     bool foundDest = false;
 
     while (openListSize > 0) {
-        Pair current = openList[0];
+        Pair node = openList[0];
         int index = 0;
         for (k = 1; k < openListSize; k++) {
-            if (cellDetails[openList[k].x][openList[k].y].f < cellDetails[openList[index].x][openList[index].y].f) {
+            if (cellDetails[openList[k].x][openList[k].y].f < cellDetails[node.x][node.y].f) {
+                node = openList[k];
                 index = k;
             }
         }
 
-        Pair node = openList[index];
         for (k = index; k < openListSize - 1; k++) {
             openList[k] = openList[k + 1];
         }
@@ -107,41 +101,41 @@ void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
 
         i = node.x;
         j = node.y;
-        closedList[i][j] = true;
+        SET_CLOSED(i, j);
 
-        int rowNum[] = { -1, 0, 0, 1 };
-        int colNum[] = { 0, -1, 1, 0 };
+        int rowNum[] = {-1, 0, 0, 1};
+        int colNum[] = {0, -1, 1, 0};
 
         for (dir = 0; dir < 4; dir++) {
             int new_i = i + rowNum[dir];
             int new_j = j + colNum[dir];
 
-            if (isValid(new_i, new_j)) {
+            if (isValid(new_i, new_j) && isUnBlocked(grid, new_i, new_j) && !(IS_CLOSED(new_i, new_j))) {
                 if (isDestination(new_i, new_j, dest)) {
                     cellDetails[new_i][new_j].parent_i = i;
                     cellDetails[new_i][new_j].parent_j = j;
                     tracePath(cellDetails, dest);
                     foundDest = true;
                     return;
-                } else if (!closedList[new_i][new_j] && isUnBlocked(grid, new_i, new_j)) {
-                    double gNew = cellDetails[i][j].g + 1.0;
-                    double hNew = calculateHValue(new_i, new_j, dest);
-                    double fNew = gNew + hNew;
+                }
 
-                    if (cellDetails[new_i][new_j].f == FLT_MAX || cellDetails[new_i][new_j].f > fNew) {
-                        openList[openListSize++] = (Pair){ new_i, new_j };
-                        cellDetails[new_i][new_j].f = fNew;
-                        cellDetails[new_i][new_j].g = gNew;
-                        cellDetails[new_i][new_j].h = hNew;
-                        cellDetails[new_i][new_j].parent_i = i;
-                        cellDetails[new_i][new_j].parent_j = j;
-                    }
+                double gNew = cellDetails[i][j].g + 1.0;
+                double hNew = calculateHValue(new_i, new_j, dest);
+                double fNew = gNew + hNew;
+
+                if (cellDetails[new_i][new_j].f == FLT_MAX || cellDetails[new_i][new_j].f > fNew) {
+                    openList[openListSize++] = (Pair){new_i, new_j};
+                    cellDetails[new_i][new_j].f = fNew;
+                    cellDetails[new_i][new_j].g = gNew;
+                    cellDetails[new_i][new_j].h = hNew;
+                    cellDetails[new_i][new_j].parent_i = i;
+                    cellDetails[new_i][new_j].parent_j = j;
                 }
             }
         }
     }
 
     if (!foundDest) {
-        // Nessuna azione se la destinazione non è trovata
+        return;
     }
 }
