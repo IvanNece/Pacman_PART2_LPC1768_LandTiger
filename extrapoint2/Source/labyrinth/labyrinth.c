@@ -269,30 +269,37 @@ void display_game_over(){
 }
 
 
-void draw_pill(int i, int j){
-	int x0, y0, x, y;
-	
-	if(labyrinth[i][j] == 2){
-		x0 = offset_x + j * CELL_SIZE + (CELL_SIZE / 2);
-		y0 = offset_y + i * CELL_SIZE + (CELL_SIZE / 2);
-		
-		LCD_SetPoint(x0, y0, PILL_COLOR);
-	}
-	
-	if(labyrinth[i][j] == 3){ // Assumi che '2' rappresenti le bonus pills
-		// Centro della cella
-		x0 = j * CELL_SIZE + (CELL_SIZE / 2) + offset_x;
-		y0 = i * CELL_SIZE + (CELL_SIZE / 2)+ offset_y;
-		
-		// Disegna un "cerchio" (approssimato) pi? grande
-		for(y = y0 - 2; y <= y0 + 2; y++){ // Raggio bonus pill (adatta se necessario)
-				for(x = x0 - 2; x <= x0 + 2; x++){
-						LCD_SetPoint(x, y, POWER_PILL_COLOR); // Colore della bonus pill
-				}
-		}
-	}
-	
-	
+void draw_pill(int i, int j) {
+    int x0, y0, x, y;
+    int radius = CELL_SIZE / 4; // Raggio della pillola
+    int radius_squared = radius * radius;
+
+    // Calcola il centro della cella
+    x0 = j * CELL_SIZE + (CELL_SIZE / 2) + offset_x;
+    y0 = i * CELL_SIZE + (CELL_SIZE / 2) + offset_y;
+
+    // Controlla il tipo di contenuto nella cella del labirinto
+    if (labyrinth[i][j] == STANDARD_PILL) {
+        // Disegna una pillola piccola
+        for (x = -1; x <= 1; x++) {
+            for (y = -1; y <= 1; y++) {
+                if (x * x + y * y <= 1) {
+                    LCD_SetPoint(x0 + x, y0 + y, PILL_COLOR); // Usa il colore della pillola
+                }
+            }
+        }
+    } else if (labyrinth[i][j] == POWER_PILL) {
+        // Disegna una pillola grande (Power Pill)
+        for (x = -3; x <= 3; x++) {
+            for (y = -3; y <= 3; y++) {
+                if (x * x + y * y <= 9) {
+                    LCD_SetPoint(x0 + x, y0 + y, POWER_PILL_COLOR); // Usa il colore della Power Pill
+                }
+            }
+        }
+    }
 }
+
+
 
 
