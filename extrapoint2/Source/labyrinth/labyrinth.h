@@ -2,6 +2,7 @@
 #define LABYRINTH_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #define EMPTY 0
 #define WALL 1
@@ -16,8 +17,8 @@
 
 #define Orange 0xFD20  // Definizione colore RGB565 Arancione
 #define WALL_COLOR Blue
-#define PILL_COLOR Yellow
-#define POWER_PILL_COLOR Orange
+#define PILL_COLOR Orange
+#define POWER_PILL_COLOR Red
 #define EMPTY_COLOR Black
 
 #define TEXT_COLOR White
@@ -28,8 +29,8 @@
 #define PACMAN_COLOR Yellow
 
 extern int countdown;
-extern int score;
-extern int lives;
+extern volatile uint16_t score;
+extern volatile uint8_t lives;
 extern int power_pills_generated; 
 extern int labyrinth[HEIGHT][WIDTH];
 
@@ -49,5 +50,6 @@ void display_score(void);
 void display_lives(void);
 void generate_power_pills(void);
 void check_game_status(void);
+void draw_pill(int i, int j);
 
 #endif

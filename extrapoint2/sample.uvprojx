@@ -745,17 +745,17 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>AStar</GroupName>
+          <GroupName>Astar</GroupName>
           <Files>
             <File>
-              <FileName>AStar.c</FileName>
+              <FileName>Astar.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Source\AStar\AStar.c</FilePath>
+              <FilePath>.\Source\Astar\Astar.c</FilePath>
             </File>
             <File>
-              <FileName>AStar.h</FileName>
+              <FileName>Astar.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Source\AStar\AStar.h</FilePath>
+              <FilePath>.\Source\Astar\Astar.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1452,17 +1452,17 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>AStar</GroupName>
+          <GroupName>Astar</GroupName>
           <Files>
             <File>
-              <FileName>AStar.c</FileName>
+              <FileName>Astar.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Source\AStar\AStar.c</FilePath>
+              <FilePath>.\Source\Astar\Astar.c</FilePath>
             </File>
             <File>
-              <FileName>AStar.h</FileName>
+              <FileName>Astar.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Source\AStar\AStar.h</FilePath>
+              <FilePath>.\Source\Astar\Astar.h</FilePath>
             </File>
           </Files>
         </Group>

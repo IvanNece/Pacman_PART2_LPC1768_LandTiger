@@ -1,37 +1,19 @@
-#ifndef GHOST_H
-#define GHOST_H
-
-#include "Pacman/Pacman.h"
 #include "labyrinth/labyrinth.h"
-#include "AStar/AStar.h"
 #include "GLCD/GLCD.h"
 #include <stdlib.h>
-#include <stdint.h>  // Per tipi di dati come uint16_t
 
-// Modalità del fantasma
-#define CHASE 1
-#define FRIGHTENED 2
+#define CHASE 0
+#define FRIGHTENED 1
 
-// Colore del fantasma
-#define BLINKY_COLOR 0xF800 // Rosso in formato RGB565
+extern int pacman_x;
+extern int pacman_y;
+extern volatile uint8_t map_matrix[HEIGHT][WIDTH];
 
-// Posizione iniziale del fantasma
-#define SPAWN_X 14
-#define SPAWN_Y 15
 
-typedef struct {
-    int x;           // Posizione X nel labirinto
-    int y;           // Posizione Y nel labirinto
-    int direction;   // Direzione attuale del fantasma
-    int mode;        // Modalità: CHASE o FRIGHTENED
-    int speed;       // Velocità del fantasma
-    uint16_t color;  // Colore del fantasma
-} Ghost;
-
-// Funzioni pubbliche
-void ghost_init(void);
-void ghost_draw(void);
-void ghost_clear(void);
-void ghost_update(void);
-
-#endif
+void draw_ghost(int i, int j);
+void move_ghost(int new_y, int new_x);
+void clear_ghost(int y, int x);
+int get_ghost_color();
+void eat_pacman();
+void eat_ghost();
+void activate_ghost_escape();

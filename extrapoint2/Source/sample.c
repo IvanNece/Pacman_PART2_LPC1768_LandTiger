@@ -31,7 +31,6 @@
 #include "joystick/joystick.h"
 #include "led/led.h"
 #include "labyrinth/labyrinth.h"
-#include "Ghost/Ghost.h"
 #include "Pacman/Pacman.h"
 
 #define SIMULATOR 1
@@ -72,6 +71,9 @@ extern uint8_t ScaleFlag; // <- ScaleFlag needs to visible in order for the emul
 
 //scheletro funzione assembler
 extern void name_function_assebler(int r0, int r1, int r2, int r3);
+
+extern int ghost_x;
+extern int ghost_y;
 
 // Display landtinger è 240x320 pixel
 // La mappa disegnata è di 28*8+31*8 =  224x248 pixel
@@ -144,12 +146,12 @@ int main(void)
 	//Disegno il labirinto con le varie etichette
 	display_game_info();
 	draw_labyrinth(labyrinth);  
+	draw_ghost(ghost_y, ghost_x);
 	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();
 
 	pacman_init();
-	ghost_init();
 	
   while (1)	
   {

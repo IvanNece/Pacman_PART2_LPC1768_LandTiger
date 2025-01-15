@@ -35,9 +35,38 @@ Ogni timer ha 4 Match Register (MR0, MR1, MR2, MR3) che possono essere configura
 **
 ******************************************************************************/
 
+#define WIDTH 28
+#define HEIGHT 31
+#define CHASE 0
+#define FRIGHTENED 1
+
+extern int countdown;
+//extern volatile uint8_t countdown_changed;
+extern int pacman_direction;
+extern int labyrinth[HEIGHT][WIDTH];
+
+extern int pacman_x;
+extern int pacman_y;
+
+extern int ghost_y;
+extern int ghost_x;
+extern volatile int ghost_start_x;
+extern volatile int ghost_start_y;
+extern volatile uint8_t ghost_mode;
+extern volatile uint8_t ghost_active;
+
+extern volatile unsigned int respawn_counter;				// contatore per il respawn
+extern volatile unsigned int frightened_counter;		// contatore per la modalit? spaventata
+
 extern int next_power_pill_score;
 
-extern unsigned char led_value;					/* defined in funct_led								*/
+volatile int pacman_move = 0;
+volatile int ghost_move = 0;
+volatile int ghost_current_speed = 10;
+volatile int increase_ghost_speed_freq = 13;
+
+extern unsigned char led_value;					/* defined in funct_led */
+
 void TIMER0_IRQHandler (void)
 {
 	//LPC_TIM0->IR: Il registro di interrupt (Interrupt Register) indica quale MR ha generato l’interrupt:
@@ -48,8 +77,26 @@ void TIMER0_IRQHandler (void)
 		//code here
 		// Aggiorna la posizione di Pac-Man
 		pacman_update();
+		pacman_move++;
 		
-		ghost_update_speed();
+		if (pacman_move == ghost_current_speed){
+			pacman_move = 0;
+			ghost_move++;
+			if (ghost_move % increase_ghost_speed_freq == 0 && ghost_current_speed>0){
+				ghost_current_speed--; // Incrementa la velocit? del fantasma
+			}
+			
+			// Movimento fantasma
+			if (ghost_active){
+				if (ghost_mode == CHASE){
+					ghost_a_star_search(ghost_y, ghost_x, pacman_y, pacman_x);
+				}
+				else{ 
+					ghost_escape(ghost_y, ghost_x, pacman_y, pacman_x);
+				}
+			}
+			
+		}
 		
 		LPC_TIM0->IR = 1;			/* clear interrupt flag */
 	}
@@ -100,6 +147,35 @@ void TIMER1_IRQHandler (void)
 		} else {
 			 // Verifica lo stato del gioco
 			check_game_status(); 
+		}
+		
+				// Conta i 3 secondi per il respawn
+		if(ghost_active == 0){  // se il fantasma non ? attivo
+			respawn_counter -= 1;
+			// Se lo mangio non mi interessa pi? il contatore frightened
+			frightened_counter = 10;
+			
+			if(respawn_counter == 0){
+				// Resetto la posizione e la modalit? del fantasma
+				ghost_x = ghost_start_x;
+				ghost_y = ghost_start_y;
+				ghost_mode = CHASE;		
+				
+				// Disegno il fantasma sulla mappa
+				draw_ghost(ghost_y, ghost_x);
+				
+				respawn_counter = 3;
+				// Riattivo il movimento del fantasma
+				ghost_active = 1;
+			}
+		}
+		
+		if (ghost_mode == FRIGHTENED){ // Ghost mode = FRIGHTENED
+			frightened_counter -= 1;
+			if (frightened_counter == 0){
+				frightened_counter = 10;
+				ghost_mode = CHASE;
+			}
 		}
 		
 		LPC_TIM1->IR = 1;			/* clear interrupt flag */

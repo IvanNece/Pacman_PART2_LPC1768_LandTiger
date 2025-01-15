@@ -1,141 +1,185 @@
-#include "AStar.h"
+#include "Astar.h"
 
-// Funzione per verificare se una cella è valida (all'interno dei limiti della mappa)
-bool isValid(int row, int col) {
-    return (row >= 0) && (row < ROW) && (col >= 0) && (col < COL);
+// Struttura per rappresentare una cella
+typedef struct {
+    uint16_t parent_i, parent_j;
+    float f, g, h;
+} Cell;
+
+// Funzione per verificare se una cella ? valida
+uint8_t isValid(int row, int col) {
+    return (row >= 0 && row < HEIGHT && col >= 0 && col < WIDTH);
 }
 
-// Funzione per verificare se una cella è non bloccata
-bool isUnBlocked(int grid[ROW][COL], int row, int col) {
-    return (grid[row][col] != 1); // La cella è valida se NON è un muro
+// Funzione per verificare se una cella non ? bloccata
+uint8_t isUnBlocked(int row, int col) {
+    return (labyrinth[row][col] != WALL && labyrinth[row][col] != 7);
 }
 
-// Funzione per verificare se la cella è la destinazione
-bool isDestination(int row, int col, Pair dest) {
-    return (row == dest.x && col == dest.y);
+// Funzione per verificare se una cella ? la destinazione
+uint8_t isDestination(int row, int col, int dest_row, int dest_col) {
+    return (row == dest_row && col == dest_col);
 }
 
-// Funzione per calcolare l'euristica (distanza Euclidea)
-double calculateHValue(int row, int col, Pair dest) {
-    return sqrt((row - dest.x) * (row - dest.x) + (col - dest.y) * (col - dest.y));
+// Funzione per calcolare il valore euristico 'h'
+float calculateHValue(int row, int col, int dest_row, int dest_col) {
+    return sqrt((float)((row - dest_row) * (row - dest_row) + (col - dest_col) * (col - dest_col)));
 }
 
-// Funzione per tracciare il percorso
-Pair tracePath(Cell cellDetails[ROW][COL], Pair dest) {
-    int row = dest.x;
-    int col = dest.y;
+// =========================================================================================================================================================
+// Algoritmo A*
 
-    while (!(cellDetails[row][col].parent_i == row && cellDetails[row][col].parent_j == col)) {
-        int temp_row = cellDetails[row][col].parent_i;
-        int temp_col = cellDetails[row][col].parent_j;
-        row = temp_row;
-        col = temp_col;
-    }
+// Funzione principale dell'algoritmo A*
+void ghost_a_star_search(int src_row, int src_col, int dest_row, int dest_col) {
+    int fi, fj, i, j, k, d;
 
-    Pair next_step = {row, col};
-    return next_step;
-}
-
-// Funzione principale per l'algoritmo A*
-void aStarSearch(int grid[ROW][COL], Pair src, Pair dest) {
-	
-		static uint8_t closedList[ROW * COL / 8] = {0}; // Compatto con bitfield
-    #define IS_CLOSED(i, j) ((closedList[(i) * COL + (j)] >> ((i * COL + j) % 8)) & 1)
-    #define SET_CLOSED(i, j) (closedList[(i) * COL + (j)] |= (1 << ((i * COL + j) % 8)))
-	
-		int i, j, k, dir;
-	
-    if (!isValid(src.x, src.y) || !isValid(dest.x, dest.y)) {
+    if (!isValid(src_row, src_col) || !isValid(dest_row, dest_col)) {
         return;
     }
-
-    if (!isUnBlocked(grid, src.x, src.y) || !isUnBlocked(grid, dest.x, dest.y)) {
+    if (!isUnBlocked(src_row, src_col) || !isUnBlocked(dest_row, dest_col)) {
         return;
     }
-
-    if (isDestination(src.x, src.y, dest)) {
+    if (isDestination(src_row, src_col, dest_row, dest_col)) {
         return;
     }
-
-    static Pair openList[100]; // Limita a 100 il numero massimo di nodi in openList
-    static int openListSize = 0;
-
-    static Cell cellDetails[ROW][COL]; // Mantieni cellDetails statico
-
-    for (i = 0; i < ROW; i++) {
-        for (j = 0; j < COL; j++) {
+		
+		// Prova aggiunta static
+    static uint8_t closedList[HEIGHT][WIDTH];
+    for (fi = 0; fi < HEIGHT; fi++) {
+        for (fj = 0; fj < WIDTH; fj++) {
+            closedList[fi][fj] = 0;  // Inizializzo a "false"
+        }
+    }
+		
+		// Prova aggiunta static
+    static Cell cellDetails[HEIGHT][WIDTH];
+    for (i = 0; i < HEIGHT; i++) {
+        for (j = 0; j < WIDTH; j++) {
             cellDetails[i][j].f = FLT_MAX;
             cellDetails[i][j].g = FLT_MAX;
             cellDetails[i][j].h = FLT_MAX;
-            cellDetails[i][j].parent_i = -1;
-            cellDetails[i][j].parent_j = -1;
+            cellDetails[i][j].parent_i = (uint16_t)-1;
+            cellDetails[i][j].parent_j = (uint16_t)-1;
         }
     }
+		
+		// Prova aggiunta static
+    static float openList[HEIGHT * WIDTH][3]; // [f, row, col]
+    int openCount = 0;
 
-    i = src.x;
-		j = src.y;
-    cellDetails[i][j].f = 0.0;
-    cellDetails[i][j].g = 0.0;
-    cellDetails[i][j].h = 0.0;
-    cellDetails[i][j].parent_i = i;
-    cellDetails[i][j].parent_j = j;
+    cellDetails[src_row][src_col].f = 0.0f;
+    cellDetails[src_row][src_col].g = 0.0f;
+    cellDetails[src_row][src_col].h = 0.0f;
+    cellDetails[src_row][src_col].parent_i = src_row;
+    cellDetails[src_row][src_col].parent_j = src_col;
 
-    openList[openListSize++] = src;
+    openList[openCount][0] = 0.0f;
+    openList[openCount][1] = (float)src_row;
+    openList[openCount][2] = (float)src_col;
+    openCount++;
 
-    bool foundDest = false;
+    uint8_t foundDest = 0;  // "false"
 
-    while (openListSize > 0) {
-        Pair node = openList[0];
-        int index = 0;
-        for (k = 1; k < openListSize; k++) {
-            if (cellDetails[openList[k].x][openList[k].y].f < cellDetails[node.x][node.y].f) {
-                node = openList[k];
-                index = k;
+    while (openCount > 0) {
+        int minIndex = 0;
+        for (i = 1; i < openCount; i++) {
+            if (openList[i][0] < openList[minIndex][0]) {
+                minIndex = i;
             }
         }
 
-        for (k = index; k < openListSize - 1; k++) {
-            openList[k] = openList[k + 1];
+        i = (int)openList[minIndex][1];
+        j = (int)openList[minIndex][2];
+        openCount--;
+        for (k = minIndex; k < openCount; k++) {
+            openList[k][0] = openList[k + 1][0];
+            openList[k][1] = openList[k + 1][1];
+            openList[k][2] = openList[k + 1][2];
         }
-        openListSize--;
 
-        i = node.x;
-        j = node.y;
-        SET_CLOSED(i, j);
+        closedList[i][j] = 1;  // "true"
 
-        int rowNum[] = {-1, 0, 0, 1};
-        int colNum[] = {0, -1, 1, 0};
+        int directions[4][2] = {
+            {-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Nord, Sud, Ovest, Est
+        for (d = 0; d < 4; d++) {
+            int new_i = i + directions[d][0];
+            int new_j = j + directions[d][1];
 
-        for (dir = 0; dir < 4; dir++) {
-            int new_i = i + rowNum[dir];
-            int new_j = j + colNum[dir];
-
-            if (isValid(new_i, new_j) && isUnBlocked(grid, new_i, new_j) && !(IS_CLOSED(new_i, new_j))) {
-                if (isDestination(new_i, new_j, dest)) {
+            if (isValid(new_i, new_j)) {
+                if (isDestination(new_i, new_j, dest_row, dest_col)) {
                     cellDetails[new_i][new_j].parent_i = i;
                     cellDetails[new_i][new_j].parent_j = j;
-                    tracePath(cellDetails, dest);
-                    foundDest = true;
+
+                    int first_i = new_i, first_j = new_j;
+                    while (cellDetails[first_i][first_j].parent_i != src_row || cellDetails[first_i][first_j].parent_j != src_col) {
+                        int temp_i = cellDetails[first_i][first_j].parent_i;
+                        int temp_j = cellDetails[first_i][first_j].parent_j;
+                        first_i = temp_i;
+                        first_j = temp_j;
+                    }
+										
+                    move_ghost(first_i, first_j);
+
+                    foundDest = 1;  // "true"
                     return;
-                }
+                } else if (!closedList[new_i][new_j] && isUnBlocked(new_i, new_j)) {
+                    float gNew = cellDetails[i][j].g + 1.0f;
+                    float hNew = calculateHValue(new_i, new_j, dest_row, dest_col);
+                    float fNew = gNew + hNew;
 
-                double gNew = cellDetails[i][j].g + 1.0;
-                double hNew = calculateHValue(new_i, new_j, dest);
-                double fNew = gNew + hNew;
+                    if (cellDetails[new_i][new_j].f == FLT_MAX || cellDetails[new_i][new_j].f > fNew) {
+                        openList[openCount][0] = fNew;
+                        openList[openCount][1] = (float)new_i;
+                        openList[openCount][2] = (float)new_j;
+                        openCount++;
 
-                if (cellDetails[new_i][new_j].f == FLT_MAX || cellDetails[new_i][new_j].f > fNew) {
-                    openList[openListSize++] = (Pair){new_i, new_j};
-                    cellDetails[new_i][new_j].f = fNew;
-                    cellDetails[new_i][new_j].g = gNew;
-                    cellDetails[new_i][new_j].h = hNew;
-                    cellDetails[new_i][new_j].parent_i = i;
-                    cellDetails[new_i][new_j].parent_j = j;
+                        cellDetails[new_i][new_j].f = fNew;
+                        cellDetails[new_i][new_j].g = gNew;
+                        cellDetails[new_i][new_j].h = hNew;
+                        cellDetails[new_i][new_j].parent_i = i;
+                        cellDetails[new_i][new_j].parent_j = j;
+                    }
                 }
             }
         }
     }
+}
 
-    if (!foundDest) {
-        return;
+
+
+
+//=======================================================================================================================
+
+// Funzione per far scappare il fantasma
+void ghost_escape(int ghost_y, int ghost_x, int pacman_y, int pacman_x){
+	int directions[4][2] = {
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1} // Nord, Sud, Ovest, Est
+    };
+    
+    int best_y = ghost_y;
+    int best_x = ghost_x;
+    float max_distance = -1.0;
+		int i;
+    for (i = 0; i < 4; i++) {
+        int new_y = ghost_y + directions[i][0];
+        int new_x = ghost_x + directions[i][1];
+
+        // Verifica se la cella ? valida e non bloccata
+        if (isValid(new_y, new_x) && isUnBlocked(new_y, new_x)) {
+            // Calcola la distanza inversa da Pac-Man
+            float distance = calculateHValue(new_y, new_x, pacman_y, pacman_x);
+            
+            // Cerca la cella con la massima distanza
+            if (distance > max_distance) {
+                max_distance = distance;
+                best_y = new_y;
+                best_x = new_x;
+            }
+        }
+    }
+
+    // Muovi il fantasma nella direzione della massima distanza
+    if (best_y != ghost_y || best_x != ghost_x) {
+        move_ghost(best_y, best_x);
     }
 }

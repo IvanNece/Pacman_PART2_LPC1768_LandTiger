@@ -4,9 +4,9 @@
 #include "GLCD/GLCD.h"
 #include "RIT/RIT.h"
 
-int score = 0;
+volatile uint16_t score = 0;
 int countdown = 60;  // Countdown iniziale a 60 secondi
-int lives = START_LIVES;
+volatile uint8_t lives = 1;
 
 int power_pills_generated = 0; // 0 = non generate, 1 = già generate
 int next_power_pill_score = 350; // Prima soglia per generare una Power Pill
@@ -54,7 +54,7 @@ void draw_labyrinth(int labyrinth[HEIGHT][WIDTH]) {
                     for (px = -1; px <= 1; px++) {
                         for (py = -1; py <= 1; py++) {
                             if (px * px + py * py <= 1) {  // Condizione per rimanere nel cerchio
-                                LCD_SetPoint(x + CELL_SIZE / 2 + px, y + CELL_SIZE / 2 + py, Orange);
+                                LCD_SetPoint(x + CELL_SIZE / 2 + px, y + CELL_SIZE / 2 + py, PILL_COLOR);
                             }
                         }
                     }
@@ -91,25 +91,15 @@ void draw_pacman_icon(int x, int y, int radius, uint16_t color) {
     // Disegna il cerchio completo
     for (i = -radius; i <= radius; i++) {
         for (j = -radius; j <= radius; j++) {
-            if (i * i + j * j <= radius * radius) {  // Condizione per rimanere nel cerchio
-								if(color == EMPTY_COLOR){
-									disable_RIT();
-									LCD_SetPoint(x + i, y + j, color);  // Disegna il pixel
-									enable_RIT();
-								} else {
-									float angle = atan2(j, i) * 180 / PI;  // Calcola l'angolo corrente
-									if (angle < 220 && angle > 140) {  // Cancella la fetta (bocca)
-                    continue;
-                   }
-									disable_RIT();
-                  LCD_SetPoint(x + i, y + j, color);  // Disegna il pixel
-									enable_RIT();
-								}
-                
+            // Controlla se il punto (i, j) è all'interno del cerchio
+            if (i * i + j * j <= radius * radius) {
+                // Disegna il punto (x + i, y + j) con il colore specificato
+                LCD_SetPoint(x + i, y + j, color);
             }
         }
     }
 }
+
 
 
 void display_game_info(void) {
@@ -193,7 +183,6 @@ void display_lives(void) {
 }
 
 
-
 void generate_power_pills(void) {
     int x, y, attempts, px, py;
 
@@ -266,7 +255,44 @@ void check_game_status(void) {
     }
 }
 
+void display_game_over(){
+	
+	// Coordinate centrali del labirinto
+    int center_x = offset_x + (224 / 2);
+    int center_y = offset_y + (248 / 2);
+	
+		// Game Over
+		disable_RIT();
+		disable_timer(0);
+		disable_timer(1);
+		GUI_Text(center_x - 40, center_y, (uint8_t *)"Game Over!", Red, Black); // 80 pixel di larghezza testo
+}
 
 
+void draw_pill(int i, int j){
+	int x0, y0, x, y;
+	
+	if(labyrinth[i][j] == 2){
+		x0 = offset_x + j * CELL_SIZE + (CELL_SIZE / 2);
+		y0 = offset_y + i * CELL_SIZE + (CELL_SIZE / 2);
+		
+		LCD_SetPoint(x0, y0, PILL_COLOR);
+	}
+	
+	if(labyrinth[i][j] == 3){ // Assumi che '2' rappresenti le bonus pills
+		// Centro della cella
+		x0 = j * CELL_SIZE + (CELL_SIZE / 2) + offset_x;
+		y0 = i * CELL_SIZE + (CELL_SIZE / 2)+ offset_y;
+		
+		// Disegna un "cerchio" (approssimato) pi? grande
+		for(y = y0 - 2; y <= y0 + 2; y++){ // Raggio bonus pill (adatta se necessario)
+				for(x = x0 - 2; x <= x0 + 2; x++){
+						LCD_SetPoint(x, y, POWER_PILL_COLOR); // Colore della bonus pill
+				}
+		}
+	}
+	
+	
+}
 
 

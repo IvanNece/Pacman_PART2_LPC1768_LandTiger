@@ -1,6 +1,5 @@
 #include "Pacman.h"
 #include "labyrinth/labyrinth.h"
-#include "Ghost/Ghost.h"
 #include <stdio.h>
 
 // Variabili globali

@@ -1,149 +1,155 @@
 #include "Ghost.h"
+#include "Pacman/Pacman.h"
 
-// Variabile globale per il fantasma Blinky
-Ghost blinky;
+int ghost_x = 15;
+int ghost_y = 14;
+volatile uint8_t ghost_mode = CHASE;  // Se ? in stato 0 segue pacman ed ? rosso, viceversa scappa ed ? ciano
+volatile uint8_t ghost_active = 1; // Fantasma non ? mangiato
 
-// Variabili per gestire la velocit? di Blinky
-static int blinky_speed_counter = 0;    // Contatore per gestire la velocit?
-static int blinky_speed_threshold = 10; // Soglia iniziale per il contatore
+volatile unsigned int respawn_counter = 3;				// contatore per il respawn
+volatile unsigned int frightened_counter = 7;		// contatore per la modalit? spaventata
+
+extern int offset_x;
+extern int offset_y;
+
+extern int pacman_x;
+extern int pacman_y;
+
+volatile int ghost_start_x = 15;
+volatile int ghost_start_y = 14;
+
+volatile int pacman_start_x = 14;
+volatile int pacman_start_y = 23;
+
+extern volatile uint8_t lives;
+
+extern volatile uint16_t score;
 
 extern int labyrinth[HEIGHT][WIDTH];
-extern int pacman_x, pacman_y;
 
-void ghost_init(void)
-{
-    blinky.x = SPAWN_X;          // Posizione iniziale X
-    blinky.y = SPAWN_Y;          // Posizione iniziale Y
-    blinky.direction = 0;        // Ferma il movimento inizialmente
-    blinky.mode = CHASE;         // Modalit? iniziale: CHASE
-    blinky.speed = 1;            // Velocit? iniziale
-    blinky.color = BLINKY_COLOR; // Colore assegnato al fantasma
-    ghost_draw();
-}
+void draw_ghost(int i, int j) {
+    int x0, y0, x, y;
+    int radius = CELL_SIZE / 2; // Raggio della testa del fantasma
+    int radius_squared = radius * radius;
 
-void ghost_draw(void)
-{
-    extern int offset_x; // Offset globale per il labirinto
-    extern int offset_y;
-
-    int pixel_x = offset_x + blinky.x * CELL_SIZE + CELL_SIZE / 2; // Posizione X centrata nella cella
-    int pixel_y = offset_y + blinky.y * CELL_SIZE + CELL_SIZE / 2; // Posizione Y centrata nella cella
-
-    // Disegna un cerchio per rappresentare Blinky
-    int radius = CELL_SIZE / 2; // Raggio del cerchio
-    int i, j;
-    for (i = -radius; i <= radius; i++)
-    {
-        for (j = -radius; j <= radius; j++)
-        {
-            if (i * i + j * j <= radius * radius)
-            { // Condizione per rimanere nel cerchio
-                disable_RIT();
-                LCD_SetPoint(pixel_x + i, pixel_y + j, blinky.color); // Colore di Blinky
-                enable_RIT();
+    // Calcola il centro della cella in cui si trova il fantasma
+    x0 = j * CELL_SIZE + (CELL_SIZE / 2) + offset_x;
+    y0 = i * CELL_SIZE + (CELL_SIZE / 2) + offset_y;
+		
+    for (x = -radius; x <= radius; x++) {
+        for (y = -radius; y <= radius; y++) {
+            if (x * x + y * y <= radius_squared) {
+                LCD_SetPoint(x0 + x, y0 + y, get_ghost_color());
             }
         }
     }
 }
 
-void ghost_clear(void)
-{
-    extern int offset_x; // Offset globale per il labirinto
-    extern int offset_y;
 
-    int pixel_x = offset_x + blinky.x * CELL_SIZE + CELL_SIZE / 2; // Posizione X centrata
-    int pixel_y = offset_y + blinky.y * CELL_SIZE + CELL_SIZE / 2; // Posizione Y centrata
+void clear_ghost(int i, int j) {
+    int x0, y0, x, y;
+    int radius = CELL_SIZE / 2; // Raggio della testa del fantasma
+    int radius_squared = radius * radius;
 
-    int radius = CELL_SIZE / 2; // Raggio del cerchio
-    int i, j;
-    for (i = -radius; i <= radius; i++)
-    {
-        for (j = -radius; j <= radius; j++)
-        {
-            if (i * i + j * j <= radius * radius)
-            { // Condizione per rimanere nel cerchio
-                disable_RIT();
-                LCD_SetPoint(pixel_x + i, pixel_y + j, EMPTY_COLOR); // Colore di sfondo
-                enable_RIT();
+    // Calcola il centro della cella in cui si trova il fantasma
+    x0 = j * CELL_SIZE + (CELL_SIZE / 2) + offset_x;
+    y0 = i * CELL_SIZE + (CELL_SIZE / 2) + offset_y;
+
+		// Cancella il cerchio ridisegnando la cella con il colore di sfondo
+    for (x = -radius; x <= radius; x++) {
+        for (y = -radius; y <= radius; y++) {
+            if (x * x + y * y <= radius_squared) {
+                LCD_SetPoint(x0 + x, y0 + y, EMPTY_COLOR);
             }
         }
     }
+		
+		// perchè il fantasma non deve magiare le pill su cui passa, quindi le ridisegno
+		draw_pill(i, j);
 }
 
-void ghost_update_speed(void)
-{
-    if (blinky_speed_counter >= blinky_speed_threshold)
-    {
-        blinky_speed_counter = 0; // Resetta il contatore
-        ghost_update();           // Aggiorna la posizione di Blinky
-
-        // Diminuisci la soglia per aumentare progressivamente la velocit?
-        if (blinky_speed_threshold > 1)
-        {
-            blinky_speed_threshold--;
-        }
-    }
-    else
-    {
-        blinky_speed_counter++;
-    }
+int get_ghost_color(){
+	if (ghost_mode == FRIGHTENED){
+		return Cyan;
+	}
+	
+	return Red;
 }
 
-void ghost_update(void)
-{
-    Pair ghost_pos = {blinky.x, blinky.y};
-    Pair pacman_pos = {pacman_x, pacman_y};
-    int i;
 
-    // Se il fantasma ? in modalit? CHASE
-    if (blinky.mode == CHASE)
-    {
-        Pair next_pos;
 
-        // Calcola il prossimo passo usando A*
-        aStarSearch(labyrinth, ghost_pos, pacman_pos);
-        next_pos = tracePath(cellDetails, pacman_pos);
-
-        // Verifica che la nuova posizione non sia un muro
-        if (labyrinth[next_pos.y][next_pos.x] != WALL)
-        {
-            ghost_clear();
-            blinky.x = next_pos.x;
-            blinky.y = next_pos.y;
-            ghost_draw();
-        }
-        else
-        {
-            // Se il fantasma ? bloccato, prova a muoverlo in una direzione casuale
-            int directions[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}}; // Su, Gi?, Sinistra, Destra
-            for (i = 0; i < 4; i++)
-            {
-                int new_x = blinky.x + directions[i][0];
-                int new_y = blinky.y + directions[i][1];
-                if (labyrinth[new_y][new_x] != WALL)
-                {
-                    ghost_clear();
-                    blinky.x = new_x;
-                    blinky.y = new_y;
-                    ghost_draw();
-                    break;
-                }
-            }
-        }
-    }
-    // Se il fantasma ? in modalit? FRIGHTENED
-    else if (blinky.mode == FRIGHTENED)
-    {
-        Pair opposite_pos = {HEIGHT - pacman_y - 1, WIDTH - pacman_x - 1};
-        Pair next_pos;
-
-        // Calcola il prossimo passo lontano da Pac-Man
-        aStarSearch(labyrinth, ghost_pos, opposite_pos);
-        next_pos = tracePath(cellDetails, opposite_pos);
-
-        ghost_clear();
-        blinky.x = next_pos.x;
-        blinky.y = next_pos.y;
-        ghost_draw();
-    }
+// MOVIMENTO DEL FANTASMA ---------------------------------------------------------------------------
+// Chiamato da a_star_search(...) che passa come argomento le nuove coordinate del fantasma
+void move_ghost(int new_y, int new_x){
+	clear_ghost(ghost_y, ghost_x);
+	ghost_y = new_y;
+	ghost_x = new_x;
+	// Se il fantasma ? in modalit? SEARCH e le sue coordinate sono le stesse di pacman
+	if (ghost_mode == CHASE && pacman_y == ghost_y && pacman_x == ghost_x){
+		eat_pacman();
+	}
+	if (ghost_mode == FRIGHTENED && pacman_y == ghost_y && pacman_x == ghost_x){
+			eat_ghost();
+		}
+	draw_ghost(ghost_y, ghost_x);
 }
+
+
+void eat_pacman(){
+	disable_timer(0);
+	// Cancello pacman
+	pacman_clear();
+	
+	// Resetta la posizione di pacman
+	pacman_x = pacman_start_x;
+	pacman_y = pacman_start_y;
+	
+	//remove_life(lives);
+	lives--;
+	
+	pacman_draw();
+	enable_timer(0);
+	
+	// GAMEOVER
+	if (lives == 0){
+		LPC_TIM0->TCR = 0; // Stop Timer 0
+		LPC_TIM1->TCR = 0; // Stop Timer 1
+		LPC_TIM2->TCR = 0; // Stop Timer 2
+		LPC_TIM3->TCR = 0; // Stop Timer 3
+		display_game_over();
+	}
+}
+
+
+void eat_ghost(){
+	// Cancello il fantasma
+	clear_ghost(ghost_y, ghost_x);
+	
+	// Resetto la posizione del fantasma
+	ghost_x = ghost_start_x;
+	ghost_y = ghost_start_y;
+	
+	// Incremento lo score
+	score += 100;
+	display_score();
+	
+	lives++;
+	display_lives();
+	
+	// Disabilito il movimento del fantasma
+	ghost_active = 0;
+}
+
+
+void activate_ghost_escape(){
+	// Attiva la modalit? "frightened" per il fantasma
+    ghost_mode = FRIGHTENED; 
+		// Imposta il tempo (in secondi) per cui il fantasma deve essere spaventato
+		frightened_counter = 10;
+}
+
+
+
+
+
+
