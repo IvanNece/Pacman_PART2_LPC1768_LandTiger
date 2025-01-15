@@ -62,8 +62,8 @@ extern int next_power_pill_score;
 
 volatile int pacman_move = 0;
 volatile int ghost_move = 0;
-volatile int ghost_current_speed = 10;
-volatile int increase_ghost_speed_freq = 13;
+volatile int ghost_current_speed = 7;
+volatile int increase_ghost_speed_freq = 10;
 
 extern unsigned char led_value;					/* defined in funct_led */
 
@@ -82,8 +82,13 @@ void TIMER0_IRQHandler (void)
 		if (pacman_move == ghost_current_speed){
 			pacman_move = 0;
 			ghost_move++;
-			if (ghost_move % increase_ghost_speed_freq == 0 && ghost_current_speed>0){
-				ghost_current_speed--; // Incrementa la velocit? del fantasma
+			if ((ghost_move % increase_ghost_speed_freq == 0) && ghost_current_speed>0){
+				if(ghost_current_speed <= 1){
+						ghost_current_speed=2;
+				}else{
+						ghost_current_speed--; // Incrementa la velocit? del fantasma
+				}
+			
 			}
 			
 			// Movimento fantasma

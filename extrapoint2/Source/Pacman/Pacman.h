@@ -2,6 +2,7 @@
 #define PACMAN_H
 
 #include "GLCD/GLCD.h"
+#include "Ghost/Ghost.h"
 
 // Definizione delle coordinate iniziali di Pac-Man
 #define PACMAN_START_X 13
