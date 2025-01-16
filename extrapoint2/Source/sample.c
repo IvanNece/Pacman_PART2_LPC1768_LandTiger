@@ -71,7 +71,7 @@ extern uint8_t ScaleFlag; // <- ScaleFlag needs to visible in order for the emul
 */
 
 //scheletro funzione assembler
-extern void name_function_assebler(int r0, int r1, int r2, int r3);
+extern void name_function_assembler(int r0, int r1, int r2, int r3);
 
 extern int ghost_x;
 extern int ghost_y;

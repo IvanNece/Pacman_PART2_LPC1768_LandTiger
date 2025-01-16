@@ -262,10 +262,11 @@ void display_game_over(){
     int center_y = offset_y + (248 / 2);
 	
 		// Game Over
-		disable_RIT();
+		//disable_RIT();
 		disable_timer(0);
 		disable_timer(1);
 		GUI_Text(center_x - 40, center_y, (uint8_t *)"Game Over!", Red, Black); // 80 pixel di larghezza testo
+		changeGameMode(2);
 }
 
 

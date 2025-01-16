@@ -114,8 +114,8 @@ void eat_pacman(){
 	if (lives == 0){
 		LPC_TIM0->TCR = 0; // Stop Timer 0
 		LPC_TIM1->TCR = 0; // Stop Timer 1
-		LPC_TIM2->TCR = 0; // Stop Timer 2
-		LPC_TIM3->TCR = 0; // Stop Timer 3
+		//LPC_TIM2->TCR = 0; // Stop Timer 2
+		//LPC_TIM3->TCR = 0; // Stop Timer 3
 		display_game_over();
 	}
 }
@@ -132,9 +132,6 @@ void eat_ghost(){
 	// Incremento lo score
 	score += 100;
 	//display_score();
-	
-	lives++;
-	//display_lives();
 	
 	// Disabilito il movimento del fantasma
 	ghost_active = 0;
