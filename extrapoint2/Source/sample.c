@@ -122,6 +122,7 @@ int main(void)
 	joystick_init();											/* Inizializzazione Joystick 					*/
 	//LED_init();
 	//TouchPanel_Calibrate();							/* Calibrazione touch display         */
+	CAN_Init();
 	
 	//Inizializzazione display
 	LCD_Initialization();

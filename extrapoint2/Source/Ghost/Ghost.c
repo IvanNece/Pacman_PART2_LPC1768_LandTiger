@@ -131,10 +131,10 @@ void eat_ghost(){
 	
 	// Incremento lo score
 	score += 100;
-	display_score();
+	//display_score();
 	
 	lives++;
-	display_lives();
+	//display_lives();
 	
 	// Disabilito il movimento del fantasma
 	ghost_active = 0;

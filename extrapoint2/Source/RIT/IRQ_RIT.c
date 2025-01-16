@@ -15,6 +15,7 @@
 #include "joystick/joystick.h"
 #include "Pacman/Pacman.h"
 #include "music/music.h"
+#include "CAN/CAN.h"
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
@@ -128,6 +129,21 @@ static int timers_enabled = 0; // Flag per controllare se i timer sono stati att
 // Questa è la ISR associata al timer RIT. Ogni volta che il timer scade, questa funzione viene eseguita.
 void RIT_IRQHandler (void)
 {	
+		
+		//PREPARO IL MS CAN CHE DEVO INVIARE SU CAN2
+		//Copia il valore del countdown nel campo data (in formato little-endian)
+		CAN_TxMsg.data[0] = (score & 0xFF);            // Byte meno significativo
+		CAN_TxMsg.data[1] = (score >> 8) & 0xFF;       // Byte successivo
+		CAN_TxMsg.data[2] = lives & 0xFF;      // Terzo byte
+		CAN_TxMsg.data[3] = countdown & 0xFF;      // Byte pi? significativo
+		CAN_TxMsg.id = 2;  // ID del messaggio (ad esempio, 21)
+		CAN_TxMsg.len = 4;  // Lunghezza dei dati (4 byte per countdown)
+		CAN_TxMsg.format = STANDARD_FORMAT;  // Identificatore standard
+		CAN_TxMsg.type = DATA_FRAME;  // Tipo di frame (DATA FRAME)
+		// Invia il messaggio da CAN1 a CAN2
+		CAN_wrMsg(1, &CAN_TxMsg);  // Trasmetti il messaggio da CAN1
+
+	
 		// Variabili globali per la musica
 		static int currentNote = 0; // Indice della nota corrente
 		static int ticks = 0;       // Contatore per i tick

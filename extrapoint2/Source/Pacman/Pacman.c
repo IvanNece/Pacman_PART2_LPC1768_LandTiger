@@ -127,13 +127,13 @@ void pacman_update(void) {
         if (labyrinth[pacman_y][pacman_x] == STANDARD_PILL) {
             score += 10;
             labyrinth[pacman_y][pacman_x] = EMPTY; // Rimuove la pillola
-            display_score();
+            //display_score();
         } else if (labyrinth[pacman_y][pacman_x] == POWER_PILL) {
             score += 50;
 						activate_ghost_escape();
 						//changeGameMode(1);
             labyrinth[pacman_y][pacman_x] = EMPTY; // Rimuove la power pill
-            display_score();
+            //display_score();
         }
 				
 				
@@ -141,7 +141,7 @@ void pacman_update(void) {
         if (score >= score_threshold + 1000) {
             lives++;
             score_threshold += 1000;  // Aggiorna il punteggio della soglia
-            display_lives();          // Aggiorna la visualizzazione delle vite
+            //display_lives();          // Aggiorna la visualizzazione delle vite
         }
 				
 				if (score >= next_power_pill_score && power_pills_generated < 6) {

@@ -148,7 +148,7 @@ void TIMER1_IRQHandler (void)
 		if(countdown > 0){
 			countdown--;
 			// Aggiorna il display con il nuovo valore del timer
-			display_timer();
+			//display_timer();
 		} else {
 			 // Verifica lo stato del gioco
 			check_game_status(); 
