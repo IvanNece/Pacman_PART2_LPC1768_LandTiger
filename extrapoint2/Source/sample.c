@@ -32,6 +32,7 @@
 #include "led/led.h"
 #include "labyrinth/labyrinth.h"
 #include "Pacman/Pacman.h"
+#include "music/music.h"
 
 #define SIMULATOR 1
 
@@ -134,19 +135,24 @@ int main(void)
 	init_timer(1, 0, 0, 3, 0x017D7840); 	// Timer1 inizializzazione con periodo 1 sec
 	//enable_timer(1);
 	
-	//init_timer(2, 0, 0, 3, 0x017D7840); 	// Timer2 inizializzazione con periodo 1 sec
-	//enable_timer(2)
-	
 	//l'abilitazione dei timer è fatta nel IRQ_RIT.c
 	
-	LPC_SC->PCON |= 0x1;									/* power-down	mode										*/
+		/* power-down	*/
+	LPC_SC->PCON |= 0x1;								
 	LPC_SC->PCON &= ~(0x2);
+	
+	//INIZIALIZZAZIONE DAC
+	LPC_PINCON->PINSEL1 |= (1<<21);
+	LPC_PINCON->PINSEL1 &= ~(1<<20);
+	LPC_GPIO0->FIODIR |= (1<<26);
 	
 /***********************************************************************************************************************/
 	//Disegno il labirinto con le varie etichette
 	display_game_info();
 	draw_labyrinth(labyrinth);  
 	draw_ghost(ghost_y, ghost_x);
+	//Il gioco parte in modalità CHASE, deve selezionare la musica corretta
+	changeGameMode(0);
 	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();

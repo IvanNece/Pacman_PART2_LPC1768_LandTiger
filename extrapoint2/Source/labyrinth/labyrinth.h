@@ -18,7 +18,7 @@
 #define Orange 0xFD20  // Definizione colore RGB565 Arancione
 #define WALL_COLOR Blue
 #define PILL_COLOR Orange
-#define POWER_PILL_COLOR Red
+#define POWER_PILL_COLOR Green
 #define EMPTY_COLOR Black
 
 #define TEXT_COLOR White

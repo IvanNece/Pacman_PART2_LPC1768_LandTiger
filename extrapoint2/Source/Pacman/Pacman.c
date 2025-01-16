@@ -131,6 +131,7 @@ void pacman_update(void) {
         } else if (labyrinth[pacman_y][pacman_x] == POWER_PILL) {
             score += 50;
 						activate_ghost_escape();
+						//changeGameMode(1);
             labyrinth[pacman_y][pacman_x] = EMPTY; // Rimuove la power pill
             display_score();
         }

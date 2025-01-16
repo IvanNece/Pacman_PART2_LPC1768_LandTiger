@@ -18,8 +18,8 @@ extern int pacman_y;
 volatile int ghost_start_x = 15;
 volatile int ghost_start_y = 14;
 
-volatile int pacman_start_x = 14;
-volatile int pacman_start_y = 23;
+volatile int pacman_start_x = 12;
+volatile int pacman_start_y = 17;
 
 extern volatile uint8_t lives;
 
@@ -142,8 +142,10 @@ void eat_ghost(){
 
 
 void activate_ghost_escape(){
-	// Attiva la modalit? "frightened" per il fantasma
+		// Attiva la modalit? "frightened" per il fantasma
     ghost_mode = FRIGHTENED; 
+		//attivo la canzone della modalità FRIGHTENED
+		changeGameMode(1);
 		// Imposta il tempo (in secondi) per cui il fantasma deve essere spaventato
 		frightened_counter = 10;
 }
