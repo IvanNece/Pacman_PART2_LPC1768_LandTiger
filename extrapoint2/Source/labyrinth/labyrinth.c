@@ -247,6 +247,12 @@ void check_game_status(void) {
 
     if (countdown == 0) {
         // Game Over
+				
+				disable_RIT();
+				//Cancella l'area delle vite
+				LCD_ClearWindow(70, 300, 100, 20, Black);
+				enable_RIT();
+				
         disable_RIT();
 				disable_timer(0);
 				disable_timer(1);
@@ -256,8 +262,13 @@ void check_game_status(void) {
 }
 
 void display_game_over(){
+		
+		disable_RIT();
+		//Cancella l'area delle vite
+		LCD_ClearWindow(70, 300, 100, 20, Black);
+		enable_RIT();
 	
-	// Coordinate centrali del labirinto
+		// Coordinate centrali del labirinto
     int center_x = offset_x + (224 / 2);
     int center_y = offset_y + (248 / 2);
 	
@@ -265,7 +276,9 @@ void display_game_over(){
 		//disable_RIT();
 		disable_timer(0);
 		disable_timer(1);
+	
 		GUI_Text(center_x - 40, center_y, (uint8_t *)"Game Over!", Red, Black); // 80 pixel di larghezza testo
+		
 		changeGameMode(2);
 }
 

@@ -44,7 +44,6 @@ typedef enum {
 
 GameMode current_mode = 0;
 
-
 // Definizione delle nuove melodie per le modalità di gioco Pac-Man
 NOTE chase_mode[] = {
     // Melodia incalzante per modalità Chase
@@ -125,25 +124,26 @@ volatile int game_paused = 0; // 0: Pausa disattiva all'avvio
 //VARIABILE TIMER ABILITATI
 static int timers_enabled = 0; // Flag per controllare se i timer sono stati attivati
 
-
 // Questa è la ISR associata al timer RIT. Ogni volta che il timer scade, questa funzione viene eseguita.
 void RIT_IRQHandler (void)
 {	
 		
-		//PREPARO IL MS CAN CHE DEVO INVIARE SU CAN2
-		//Copia il valore del countdown nel campo data (in formato little-endian)
-		CAN_TxMsg.data[0] = (score & 0xFF);            // Byte meno significativo
-		CAN_TxMsg.data[1] = (score >> 8) & 0xFF;       // Byte successivo
-		CAN_TxMsg.data[2] = lives & 0xFF;      // Terzo byte
-		CAN_TxMsg.data[3] = countdown & 0xFF;      // Byte pi? significativo
-		CAN_TxMsg.id = 2;  // ID del messaggio (ad esempio, 21)
-		CAN_TxMsg.len = 4;  // Lunghezza dei dati (4 byte per countdown)
-		CAN_TxMsg.format = STANDARD_FORMAT;  // Identificatore standard
-		CAN_TxMsg.type = DATA_FRAME;  // Tipo di frame (DATA FRAME)
-		// Invia il messaggio da CAN1 a CAN2
-		CAN_wrMsg(1, &CAN_TxMsg);  // Trasmetti il messaggio da CAN1
+		// Configura il messaggio CAN da inviare su CAN2
+		// Scrive il valore del punteggio nel campo dati (in formato little-endian)
+		CAN_TxMsg.data[0] = (score & 0xFF);            // Byte meno significativo del punteggio
+		CAN_TxMsg.data[1] = (score >> 8) & 0xFF;       // Byte più significativo del punteggio
+		CAN_TxMsg.data[2] = lives & 0xFF;              // Numero di vite disponibili
+		CAN_TxMsg.data[3] = countdown & 0xFF;          // Valore attuale del timer del conto alla rovescia
 
-	
+		// Imposta i metadati del messaggio CAN
+		CAN_TxMsg.id = 2;                              // Identificatore del messaggio (ID 2)
+		CAN_TxMsg.len = 4;                             // Lunghezza del messaggio (4 byte di dati)
+		CAN_TxMsg.format = STANDARD_FORMAT;            // Formato standard per l'identificatore
+		CAN_TxMsg.type = DATA_FRAME;                   // Tipo di messaggio: frame di dati
+
+		// Trasmette il messaggio dal CAN Controller 1 verso il CAN Controller 2
+		CAN_wrMsg(1, &CAN_TxMsg);                      // Chiamata per inviare il messaggio CAN
+
 		// Variabili globali per la musica
 		static int currentNote = 0; // Indice della nota corrente
 		static int ticks = 0;       // Contatore per i tick
@@ -176,17 +176,15 @@ void RIT_IRQHandler (void)
         }
     }
 
-	
-	
-	static int J_select = 0;
-	static int J_down = 0;
-	static int J_left = 0;
-	static int J_right = 0;
-	static int J_up = 0;
-	
+
 /* JOYSTICK MANAGEMENT ******************************************************************************************************************************************************************/
 	//Gestione del joystick, Il codice verifica lo stato dei pin GPIO associati ai movimenti del joystick. Ogni direzione è associata a un bit specifico dei registri GPIO.
 	
+		static int J_select = 0;
+		static int J_down = 0;
+		static int J_left = 0;
+		static int J_right = 0;
+		static int J_up = 0;
 	 
 	 //**** SE VIENE USATO IL JOYSTICK, IL GIOCO PARTE E TIMER VENGONO ABILITATI***********************
 	

@@ -38,74 +38,76 @@ uint16_t val_RxCoordY = 0;
   CAN interrupt handler
  *----------------------------------------------------------------------------*/
  
-volatile uint8_t old_countdown = 0;  // Flag per tracciare se il countdown ? cambiato
-volatile uint16_t old_score = 0;
-volatile uint8_t old_lives = 1;
-uint8_t first = 0;
-
+// Variabili esterne che rappresentano lo stato corrente del gioco
 extern volatile uint16_t score;
 extern int countdown;
 extern volatile uint8_t lives;
 
+// Per evitare il lag
+volatile uint8_t previous_countdown = 0;  // Memorizza il valore precedente del countdown per rilevare variazioni
+volatile uint16_t previous_score = 0;    // Memorizza il punteggio precedente per il confronto
+volatile uint8_t previous_lives = 1;     // Salva il numero di vite precedente per monitorare cambiamenti
+uint8_t initialization_flag = 0;         // Utilizzato per aggiornare i valori iniziali una sola volta
 
-//can2 to receive and can1 to send 
+
 void CAN_IRQHandler (void) {
-
-      /* check CAN controller 2 */
+			
+		// CAN2 per ricevere e CAN1 per trasmettere
+    /* check CAN controller 2 */
     icr = 0;
-    icr = (LPC_CAN2->ICR | icr) & 0xFF;  /* clear interrupts */
+    icr = (LPC_CAN2->ICR | icr) & 0xFF;  /* clear interrupts found */
 
     if (icr & (1 << 0)) {  /* CAN Controller #2 message is received */
         CAN_rdMsg(2, &CAN_RxMsg);  /* Read the message */
         LPC_CAN2->CMR = (1 << 2);  /* Release receive buffer */
 
-        // Controlla se il messaggio ricevuto ha l'ID 2
+        // Controlla se l'ID del messaggio ricevuto corrisponde a 2
         if (CAN_RxMsg.id == 2) {
-            // Estrai i valori dai dati del messaggio
-            uint16_t score = (CAN_RxMsg.data[1] << 8) | CAN_RxMsg.data[0]; // Score: primi 2 byte
-            uint8_t lives = CAN_RxMsg.data[2];                             // Lives: terzo byte
-            uint8_t countdown = CAN_RxMsg.data[3];                         // Countdown: quarto byte
+						// Estrai i dati dal messaggio ricevuto
+						// Il messaggio contiene:
+						// - Punteggio (Score): primi 2 byte (little-endian)
+						// - Numero di vite (Lives): terzo byte
+						// - Timer del conto alla rovescia (Countdown): quarto byte
+            uint16_t new_score = (CAN_RxMsg.data[1] << 8) | CAN_RxMsg.data[0]; 
+            uint8_t new_lives = CAN_RxMsg.data[2];                              
+            uint8_t new_countdown = CAN_RxMsg.data[3];                         
 						
-					if (first == 0){
-            // Aggiorna lo schermo con i nuovi valori
-						display_timer();
-            display_score();
-            display_lives();
-						first++;
-					}
+            // Inizializza il display alla prima ricezione dei dati
+						// Questa sezione garantisce che i valori iniziali del gioco vengano mostrati correttamente
+            if (initialization_flag == 0) {
+                display_timer();
+                display_score();
+                display_lives();
+                initialization_flag = 1; // Evita di ripetere l'inizializzazione
+            }
+
+            // Aggiorna il timer solo se è cambiato
+						// Questo controllo evita aggiornamenti inutili sul display, riducendo i lag
+            if (previous_countdown != new_countdown) {
+                display_timer();
+                previous_countdown = new_countdown;
+            }
+						
+						// Controlla se il numero di vite è variato (aumento o diminuzione)
+						// Questo controllo aggiorna il display solo se necessario
+						if (previous_lives != new_lives) {
+								display_lives();
+								previous_lives = new_lives;  // Aggiorna il valore salvato delle vite
+						}
+
+            // Aggiorna il punteggio solo se è diverso dal precedente
+						// Minimizza l'accesso al display, evitando rallentamenti
+            if (previous_score != new_score) {
+                display_score();
+                previous_score = new_score;
+            }
 					
-					if(old_countdown != countdown){
-						display_timer();
-						old_countdown = countdown;
-					}
-					
-					// Se il mio punteggio ? variato lo aggiorno
-					if(old_score != score){
-						display_score();
-						old_score = score;
-					}
-					
-					// Se ho guadagnato una vita
-					if(old_lives < lives){ 
-						display_lives();
-						old_lives = lives;
-					}
-					
-					// Se ho perso una vita
-					if(old_lives > lives){
-						display_lives();
-						old_lives = lives;
-					}
-					
-					// GAMEOVER
-					if (countdown == 0 || lives == 0){
-						LPC_TIM0->TCR = 0; // Stop Timer 0
-						LPC_TIM1->TCR = 0; // Stop Timer 1
-						//LPC_TIM2->TCR = 0; // Stop Timer 2
-						//LPC_TIM3->TCR = 0; // Stop Timer 3
-						display_game_over();
-						//disable_RIT();
-					}
+						// Verifica se il gioco è terminato (GAME OVER)
+            if (new_countdown == 0 || new_lives == 0) {
+                LPC_TIM0->TCR = 0; // Ferma il Timer 0
+                LPC_TIM1->TCR = 0; // Ferma il Timer 1
+                display_game_over(); // Mostra il messaggio di fine gioco
+            }
         }
 	}
 

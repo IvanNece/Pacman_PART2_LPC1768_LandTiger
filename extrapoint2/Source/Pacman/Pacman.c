@@ -16,9 +16,9 @@ extern volatile int game_paused;
 extern int labyrinth[HEIGHT][WIDTH];
 extern int next_power_pill_score;
 
-extern int ghost_x;
-extern int ghost_y;
-extern volatile uint8_t ghost_mode; 
+extern int blinky_pos_x;
+extern int blinky_pos_y;
+extern volatile uint8_t blinky_behavior_mode; 
 
 // Funzione per inizializzare Pac-Man
 void pacman_init(void) {
@@ -114,11 +114,11 @@ void pacman_update(void) {
         pacman_x = next_x;
         pacman_y = next_y;
 			
-		if (ghost_mode == CHASE && pacman_y == ghost_y && pacman_x == ghost_x){
-			eat_pacman();
+		if (blinky_behavior_mode == CHASE && pacman_y == blinky_pos_y && pacman_x == blinky_pos_x){
+			kill_pacman();
 		}
-		if (ghost_mode == FRIGHTENED && pacman_y == ghost_y && pacman_x == ghost_x){
-			eat_ghost();
+		if (blinky_behavior_mode == FRIGHTENED && pacman_y == blinky_pos_y && pacman_x == blinky_pos_x){
+			kill_ghost();
 		}
 			
         pacman_draw();   // Disegna Pac-Man nella nuova posizione
@@ -130,7 +130,7 @@ void pacman_update(void) {
             //display_score();
         } else if (labyrinth[pacman_y][pacman_x] == POWER_PILL) {
             score += 50;
-						activate_ghost_escape();
+						activate_blinky_scared_mod();
 						//changeGameMode(1);
             labyrinth[pacman_y][pacman_x] = EMPTY; // Rimuove la power pill
             //display_score();

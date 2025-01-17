@@ -48,15 +48,15 @@ extern int labyrinth[HEIGHT][WIDTH];
 extern int pacman_x;
 extern int pacman_y;
 
-extern int ghost_y;
-extern int ghost_x;
+extern int blinky_pos_y;
+extern int blinky_pos_x;
 extern volatile int ghost_start_x;
 extern volatile int ghost_start_y;
-extern volatile uint8_t ghost_mode;
-extern volatile uint8_t ghost_active;
+extern volatile uint8_t blinky_behavior_mode;
+extern volatile uint8_t blinky_is_active;
 
-extern volatile unsigned int respawn_counter;				// contatore per il respawn
-extern volatile unsigned int frightened_counter;		// contatore per la modalit? spaventata
+extern volatile unsigned int blinky_respawn_timer;				// contatore per il respawn
+extern volatile unsigned int blinky_scared_timer;		// contatore per la modalit? spaventata
 
 extern int next_power_pill_score;
 
@@ -72,39 +72,42 @@ void TIMER0_IRQHandler (void)
 	//LPC_TIM0->IR: Il registro di interrupt (Interrupt Register) indica quale MR ha generato l’interrupt:
 	
 	/* Match register 0 interrupt service routine */
-	if (LPC_TIM0->IR & 01)
-	{
-		//code here
-		// Aggiorna la posizione di Pac-Man
-		pacman_update();
-		pacman_move++;
 		
-		if (pacman_move == ghost_current_speed){
-			pacman_move = 0;
-			ghost_move++;
-			if ((ghost_move % increase_ghost_speed_freq == 0) && ghost_current_speed>0){
-				if(ghost_current_speed <= 1){
-						ghost_current_speed=2;
-				}else{
-						ghost_current_speed--; // Incrementa la velocit? del fantasma
-				}
-			
-			}
-			
-			// Movimento fantasma
-			if (ghost_active){
-				if (ghost_mode == CHASE){
-					ghost_a_star_search(ghost_y, ghost_x, pacman_y, pacman_x);
-				}
-				else{ 
-					ghost_escape(ghost_y, ghost_x, pacman_y, pacman_x);
-				}
-			}
-			
-		}
-		
-		LPC_TIM0->IR = 1;			/* clear interrupt flag */
+	if (LPC_TIM0->IR & 0x01) { // Controlla se il timer 0 ha generato un interrupt
+    // Aggiorna lo stato e la posizione di Pac-Man
+    pacman_update(); // Funzione per gestire il movimento e le interazioni di Pac-Man
+    pacman_move++;   // Incrementa il contatore dei passi di Pac-Man
+
+    // Controlla se Pac-Man ha completato il suo movimento e attiva il fantasma
+    if (pacman_move == ghost_current_speed) {
+        pacman_move = 0;      // Resetta il contatore dei passi di Pac-Man
+        ghost_move++;         // Incrementa il contatore dei passi del fantasma
+
+        // Aumenta la velocità del fantasma a intervalli definiti
+        if ((ghost_move % increase_ghost_speed_freq == 0) && ghost_current_speed > 0) {
+            if (ghost_current_speed <= 1) {
+								//LINEA IMPORTANTE, SENNO IL GHOST DIVENETREBBE VELOCE QUANTO PACMAN, E SAREBBE INGIOCABILE
+                ghost_current_speed = 2; // Limita la velocità minima del fantasma
+            } else {
+                ghost_current_speed--;   // Riduce il tempo tra i movimenti del fantasma, accelerandolo
+            }
+        }
+
+        // Gestisce il movimento del fantasma in base al suo stato attuale
+        if (blinky_is_active) { // Controlla se il fantasma è attivo
+            if (blinky_behavior_mode == CHASE) {
+                // Modalità di inseguimento: calcola il percorso verso Pac-Man
+                perform_a_star_search(blinky_pos_y, blinky_pos_x, pacman_y, pacman_x);
+            } else {
+                // Modalità di fuga: calcola il percorso lontano da Pac-Man
+                initiate_ghost_escape(blinky_pos_y, blinky_pos_x, pacman_y, pacman_x);
+            }
+        }
+    }
+
+    LPC_TIM0->IR = 1; // Resetta il flag di interrupt del timer 0 per permettere nuovi interrupt
 	}
+
 		/* Match register 1 interrupt service routine */
 	  /* it should be possible to access to both interrupt requests in the same procedure*/
 	if(LPC_TIM0->IR & 02)
@@ -143,51 +146,56 @@ void TIMER0_IRQHandler (void)
 void TIMER1_IRQHandler (void)
 {
   /* Match register 0 interrupt service routine */
-	if (LPC_TIM1->IR & 01)
-	{	//code here
-		if(countdown > 0){
-			countdown--;
-			// Aggiorna il display con il nuovo valore del timer
-			//display_timer();
-		} else {
-			 // Verifica lo stato del gioco
-			check_game_status(); 
-		}
-		
-				// Conta i 3 secondi per il respawn
-		if(ghost_active == 0){  // se il fantasma non ? attivo
-			//torno in modalità CHASE per la musica
-			changeGameMode(0);
-			
-			respawn_counter -= 1;
-			// Se lo mangio non mi interessa pi? il contatore frightened
-			frightened_counter = 10;
-			
-			if(respawn_counter == 0){
-				// Resetto la posizione e la modalit? del fantasma
-				ghost_x = ghost_start_x;
-				ghost_y = ghost_start_y;
-				ghost_mode = CHASE;		
-				
-				// Disegno il fantasma sulla mappa
-				draw_ghost(ghost_y, ghost_x);
-				
-				respawn_counter = 3;
-				// Riattivo il movimento del fantasma
-				ghost_active = 1;
+		if (LPC_TIM1->IR & 0x01) {  // Controlla se il timer 1 ha generato un interrupt
+    
+			// Decrementa il timer del conto alla rovescia se maggiore di zero
+			if (countdown > 0) {
+					countdown--;  // Riduce il valore del timer
+					// Aggiorna il display con il nuovo valore del countdown
+					// display_timer();
+			} else {
+					// Quando il countdown raggiunge zero, verifica lo stato del gioco
+					check_game_status();
 			}
-		}
-		
-		if (ghost_mode == FRIGHTENED){ // Ghost mode = FRIGHTENED
-			frightened_counter -= 1;
-			if (frightened_counter == 0){
-				frightened_counter = 10;
-				ghost_mode = CHASE;
-			}
-		}
-		
-		LPC_TIM1->IR = 1;			/* clear interrupt flag */
+
+			// Gestisce il timer per il respawn del fantasma se non è attivo
+			if (blinky_is_active == 0) {  // Verifica se il fantasma è inattivo
+					changeGameMode(0);  // Cambia la modalità musicale a "CHASE"
+
+					blinky_respawn_timer--;  // Decrementa il timer di respawn
+					blinky_scared_timer = 10;  // Resetta il timer della modalità "spaventato"
+
+					if (blinky_respawn_timer == 0) {
+							// Resetta la posizione del fantasma alla posizione iniziale
+							blinky_pos_x = ghost_start_x;
+							blinky_pos_y = ghost_start_y;
+
+							// Ripristina la modalità di inseguimento del fantasma
+							blinky_behavior_mode = CHASE;
+
+							// Ridisegna il fantasma sulla mappa
+							draw_ghost(blinky_pos_y, blinky_pos_x);
+
+							// Resetta il timer di respawn e riattiva il fantasma
+							blinky_respawn_timer = 3;
+							blinky_is_active = 1;  // Attiva il movimento del fantasma
+					}
+    }
+
+    // Gestisce la modalità "spaventato" del fantasma
+    if (blinky_behavior_mode == FRIGHTENED) {
+        blinky_scared_timer--;  // Decrementa il timer della modalità spaventata
+
+        if (blinky_scared_timer == 0) {
+            // Quando il timer frightened scade, ritorna alla modalità "CHASE"
+            blinky_scared_timer = 10;  // Resetta il timer per eventuali future interazioni
+            blinky_behavior_mode = CHASE;  // Cambia modalità a inseguimento
+        }
+    }
+
+    LPC_TIM1->IR = 1;  // Resetta il flag di interrupt del timer 1
 	}
+
 		/* Match register 1 interrupt service routine */
 	  /* it should be possible to access to both interrupt requests in the same procedure*/
 	if(LPC_TIM1->IR & 02)
@@ -249,7 +257,6 @@ void TIMER2_IRQHandler (void)
 		LPC_DAC->DACR = currentValue <<6;
 		sineticks++;
 		if(sineticks==45) sineticks=0;
-		
 			
 		LPC_TIM2->IR = 1;			/* clear interrupt flag */
 	}

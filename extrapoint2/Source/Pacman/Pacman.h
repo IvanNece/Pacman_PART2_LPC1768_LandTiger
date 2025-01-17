@@ -5,8 +5,8 @@
 #include "Ghost/Ghost.h"
 
 // Definizione delle coordinate iniziali di Pac-Man
-#define PACMAN_START_X 13
-#define PACMAN_START_Y 12
+#define PACMAN_START_X 12
+#define PACMAN_START_Y 17
 
 // Direzioni
 #define STOP 0

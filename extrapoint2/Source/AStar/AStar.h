@@ -1,13 +1,12 @@
 #include "labyrinth/labyrinth.h"
 #include "Ghost/Ghost.h"
+#include <float.h> 
+#include <math.h>  
 
-#include <float.h>  // Per FLT_MAX
-#include <math.h>   // Per sqrt
-
-#define HEIGHT 31  // HEIGHT
-#define WIDTH 28	// WIDTH
+#define HEIGHT 31 
+#define WIDTH 28	
 
 extern int labyrinth[HEIGHT][WIDTH];
 
-void ghost_a_star_search(int src_row, int src_col, int dest_row, int dest_col);
-void ghost_escape(int ghost_y, int ghost_x, int pacman_y, int pacman_x);
+void perform_a_star_search(int start_row, int start_col, int goal_row, int goal_col);
+void initiate_ghost_escape(int ghost_current_y, int ghost_current_x, int pacman_y, int pacman_x);

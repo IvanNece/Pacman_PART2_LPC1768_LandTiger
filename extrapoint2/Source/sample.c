@@ -73,8 +73,8 @@ extern uint8_t ScaleFlag; // <- ScaleFlag needs to visible in order for the emul
 //scheletro funzione assembler
 extern void name_function_assembler(int r0, int r1, int r2, int r3);
 
-extern int ghost_x;
-extern int ghost_y;
+extern int blinky_pos_x;
+extern int blinky_pos_y;
 
 // Display landtinger è 240x320 pixel
 // La mappa disegnata è di 28*8+31*8 =  224x248 pixel
@@ -151,7 +151,7 @@ int main(void)
 	//Disegno il labirinto con le varie etichette
 	display_game_info();
 	draw_labyrinth(labyrinth);  
-	draw_ghost(ghost_y, ghost_x);
+	draw_ghost(blinky_pos_y, blinky_pos_x);
 	//Il gioco parte in modalità CHASE, deve selezionare la musica corretta
 	changeGameMode(0);
 	
