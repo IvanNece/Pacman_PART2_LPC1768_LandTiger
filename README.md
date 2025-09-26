@@ -5,6 +5,10 @@
 > **📹 [WATCH THE COMPLETE PROJECT DEMONSTRATION](./extraPoint_1_Videox1.25_Spiegazione_Necerini.mp4)**  
 > *Complete walkthrough showing all game functionalities, hardware interactions, and system behavior in action*
 
+## 📸 Project in Action
+![Pacman Game on LPC1768 LandTiger Board](./pacman_board_demo.png)
+*LPC1768 LandTiger development board running the complete Pacman game with CAN communication setup*
+
 ---
 
 ## 📋 Project Overview
